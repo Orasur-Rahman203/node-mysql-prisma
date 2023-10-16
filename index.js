@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const { PrismaClient, Prisma } = require("@prisma/client")
+const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient();
 
 async function checkDbCOnnection() {
@@ -18,63 +18,54 @@ app.use(express.urlencoded({
     extended: true
 }))
 
-app.get("/", async (req, res) => {
-    let data = await prisma.user.findMany()
-    res.json({ "userlist": data })
-    // res.json("userlist")
+app.get("/", async(req, res)=>{
+    let data=await prisma.user_info.findMany()
+    res.json({"UserList": data})
 })
-
-
-app.post("/", async (req, res) => {
-
-    const { id, firstName, lastName, age } = req.query
-    let data = await prisma.user.create({
-        data: {
-            firstName: firstName,
-            lastName: lastName,
-            age: parseInt(age),
-            nickName: "hello"
-            
+app.get("/:id", async(req, res)=>{
+    const uid=req.params.id;
+    let data=await prisma.user_info.findUnique({
+        where:{
+            uid:parseInt(uid)
         }
     })
-
-    // prisma.user.createMany(])
-    res.json({ "message": "created" })
+    res.json({"user data": data})
 })
 
-
-app.patch("/", async (req, res) => {
-
-    const { id, firstName, lastName, age } = req.query
-
-    let data = await prisma.user.update({
-        where: {
-            id: parseInt(id)
-        }, data: {
-            firstName: firstName,
-            lastName: lastName,
-            age: parseInt(age)
+app.post("/", async(req, res)=>{
+    const { email, password}=req.query
+    let data=await prisma.user_info.create({
+        data:{
+            email:email,
+            password:password,
         }
     })
-
-    res.json({ "message": "updated" })
-
+    res.json({"message":"successfully created", data})
 })
 
-
-app.delete("/", async (req, res) => {
-    const { id } = req.query
-
-    let data = await prisma.user.delete({
-        where: {
-            id: parseInt(id)
+app.patch("/:id", async(req, res)=>{
+    const uid=req.params.id;
+    const {email}=req.query;
+    const result=await prisma.user_info.update({
+        where:{uid:parseInt(uid)},
+        data:{
+            email:email,
         }
     })
-
-    res.json({ "message": "deleted" })
+    res.json({"message":"successfully updated", result})
 
 })
 
-app.listen(3005, () => console.log(`Server is running on port ${3005}`));
+
+app.delete("/:id", async(req, res)=>{
+    const uid=req.params.id;
+    let data=await prisma.user_info.delete({
+        where:{
+            uid:parseInt(uid)
+        }
+    })
+    res.json({"message":"successfully deleted",data}) 
+})
 
 
+app.listen(3001, () => console.log(`Server is running on port ${3001}`));
