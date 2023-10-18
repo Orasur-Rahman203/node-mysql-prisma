@@ -12,17 +12,37 @@ async function checkDbCOnnection() {
 }
 
 checkDbCOnnection()
-
 app.use(express.json())
 app.use(express.urlencoded({
     extended: true
 }))
 
-app.get("/", async(req, res)=>{
-    let data=await prisma.user_info.findMany()
-    res.json({"UserList": data})
+app.get("/api/users", async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    try {
+        const data = await prisma.user_info.findMany({
+            skip,
+            take: limit,
+        });
+        res.json({ "UserList": data });
+    } catch (error) {
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}).post("/api/users", async(req, res)=>{
+    const {fullName, email, password}=req.query
+    let data=await prisma.user_info.create({
+        data:{
+            fullName:fullName,
+            email:email,
+            password:password,
+        }
+    })
+    res.json({"message":"successfully created", data})
 })
-app.get("/:id", async(req, res)=>{
+
+app.get("/api/users/:id", async(req, res)=>{
     const uid=req.params.id;
     let data=await prisma.user_info.findUnique({
         where:{
@@ -32,23 +52,14 @@ app.get("/:id", async(req, res)=>{
     res.json({"user data": data})
 })
 
-app.post("/", async(req, res)=>{
-    const { email, password}=req.query
-    let data=await prisma.user_info.create({
-        data:{
-            email:email,
-            password:password,
-        }
-    })
-    res.json({"message":"successfully created", data})
-})
-
-app.patch("/:id", async(req, res)=>{
+app.patch("/api/users/:id", async(req, res)=>{
     const uid=req.params.id;
-    const {email}=req.query;
+    const {fullName, email}=req.query;
+    console.log(fullName, email);
     const result=await prisma.user_info.update({
         where:{uid:parseInt(uid)},
         data:{
+            fullName:fullName,
             email:email,
         }
     })
@@ -56,8 +67,7 @@ app.patch("/:id", async(req, res)=>{
 
 })
 
-
-app.delete("/:id", async(req, res)=>{
+app.delete("/api/users/:id", async(req, res)=>{
     const uid=req.params.id;
     let data=await prisma.user_info.delete({
         where:{
@@ -68,4 +78,4 @@ app.delete("/:id", async(req, res)=>{
 })
 
 
-app.listen(3001, () => console.log(`Server is running on port ${3001}`));
+app.listen(8000, () => console.log(`Server is running on port ${8000}`));
